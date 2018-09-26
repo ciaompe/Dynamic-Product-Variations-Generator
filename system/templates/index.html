@@ -1,0 +1,275 @@
+{% extends 'default.html' %}
+
+{% block content %}
+
+	<div class="col-md-4 col-sm-6">
+        <img src="assets/img/iphone-xs-max-64gb-gold-apple.jpg" class="img-thumbnail single-product-image">
+    </div>
+
+    <div class="col-md-8 col-sm-6">
+
+        <span class="label label-success" id="in_stock">In Stock</span>
+        <span class="label label-warning" id="limited_stock">Limited Stock</span>
+        <span class="label label-danger"  id="out_of_stock">Outof Stock</span>
+      
+        <h3 class="product-single-title">Apple IPHONE XS MAX 512|256|128|64</h3>
+  
+          <form id="add_to_cart_form" action="#" method="post" data-variations="{{variations | json_encode}}">
+            <div class="form-group">
+                <label for="quantity">Quantity : </label>
+                <input type="number" min="1" id="quantity" name="quantity" class="form-control input-sm" value="1" data-quantity>
+            </div>
+            {% for key,value in attributes %}
+            <div class="form-group">
+                <label>{{key|capitalize}} :</label>
+                <select name="{{key}}" id="{{key}}" class="form-controll attribute" data-attribute_name="{{key}}" required>
+                    {% for option in value%}
+                        <option value="{{ option|lower|replace({' ': '-'}) }}">{{option}}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endfor %}
+
+            <h4 style="background: #f1f1f1; padding:10px;">Price : <span id="price">$ 00.00</span></h4>
+            
+            <input id="vid" type="hidden" name="variation">
+
+            <button type="submit" class="btn btn-success btn-sm" id="cart_submit_but">Add to cart</button>
+
+          </form>
+
+        <br>
+        <div class="panel panel-default">
+          <div class="panel-heading">Product Description</div>
+            <div class="panel-body">
+              <p>It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. The point of using Lorem Ipsum is that it has </p>
+          </div>
+        </div>
+
+    </div>
+
+
+{% endblock %}
+
+{% block footer %}
+
+<script src="assets/js/jquery.chained.js"></script>
+   
+<script type="text/javascript">
+$(function(){
+
+    var variations = JSON.parse($('#add_to_cart_form').attr("data-variations"));
+  
+    var attributes = [];
+    var att_continue = true;
+
+    //defualt variation
+    for(var i=0; i < variations.length; i++) {
+
+      //default variation
+      if(variations[i].default == 1){
+        //quantity
+        quantityDisplay(variations[i].quantity);
+        //price
+        priceDisplay(variations[i].price);
+        //variation id
+        vidDisplay(variations[i].id);
+        //attribute fields
+        selectVariationField(variations[i].fields);
+      }
+      
+      //get attributes only ones
+      if(att_continue) {
+        getAttributes(variations[i].fields);
+        att_continue = false;
+      }
+
+      var tmp_variations = [];
+
+      //set data-chain options
+      for(var f=0; f<variations[i].fields.length; f++) {
+        $.each(variations[i].fields[f], function(k, v) {
+          tmp_variations.push(v);
+        });
+      }
+    
+      for(var a=0; a < attributes.length; a++) {
+        $("#"+attributes[a]+" option").each(function(){
+
+            var option_val = $(this).val();
+
+            if(option_val != null && option_val != "") {
+
+              for(var t=0; t<tmp_variations.length; t++) {
+                
+                var tmp_v = formatOpt(tmp_variations[t]);
+                var tmp_v1 = formatOpt(tmp_variations[t+1]);
+                var tmp_v0 = formatOpt(tmp_variations[0]);
+
+                //var tmp_v_1 = formatOpt(tmp_variations[t-1]);
+
+                if(tmp_v1 == option_val) {
+                  if(t<1){
+                    if(!$(this).hasClass(tmp_v0)){
+                      $(this).addClass(tmp_v0);
+                    }
+                    if(!$(this).hasClass(tmp_v)){
+                      $(this).addClass(tmp_v);
+                    }
+                  } else {
+                    //if(t<2) {
+                      $(this).addClass(tmp_v0+"\\"+tmp_v);
+                    //} else {
+                    //  $(this).addClass(tmp_v0+"\\"+tmp_v_1+"\\"+tmp_v);
+                    //}
+                    
+                  }
+                }
+              }
+            }
+
+        });
+      }
+
+    }
+    //end default for loop
+
+    //select variation field value
+    function getAttributes(vfields) {
+      for(var f=0; f<vfields.length; f++) {
+          $.each(vfields[f], function(k, v) {
+            attributes.push(k);
+          });
+      }
+    }
+    
+    //Chain the Attributes
+    for(var a=0; a < attributes.length; a++) {
+        if(a+1 < attributes.length){
+          if(a<1){
+            $("#"+attributes[a+1]).chained("#"+attributes[0]);
+          }else {
+            //if(a < 2) {
+              $("#"+attributes[a+1]).chained("#"+attributes[0]+", #"+attributes[a]);
+            // } else {
+            //     var att_ids = [];
+            //     for(var t=0; t<attributes.length; t++) {
+            //       att_ids.push("#"+attributes[t]);
+            //     }
+            //     att_ids.splice(-1,1)
+            //     $("#"+attributes[a+1]).chained(att_ids.join(','));
+            // }
+            
+          }
+        }
+    }
+   
+    //attribute change function
+    $(".attribute").change(function(e){
+        var selected_variation = [];
+
+        var att_key = $(this).attr('data-attribute_name');
+        var att_val = $(this).val();
+        selected_variation.push(att_val);
+
+        //get child attribute key and values
+        for(var i=0; i < attributes.length; i++) {
+          if(attributes[i] != att_key) {
+            var att_key_child = attributes[i];
+            var att_val_child = $("#"+attributes[i]+" option:selected").val();
+            selected_variation.push(att_val_child);
+          }
+        }
+        for(var i =0; i < variations.length; i++) {
+
+          var product_variations = [];
+
+          for(var f=0; f<variations[i].fields.length; f++) {
+            $.each(variations[i].fields[f], function(k, v) {
+              product_variations.push(formatOpt(v));
+            });
+          }
+          
+          var compare = compareArrays(selected_variation, product_variations);
+          
+          if(compare == true) {
+            //quantity
+            quantityDisplay(variations[i].quantity);
+            //price
+            priceDisplay(variations[i].price);
+            //variation id
+            vidDisplay(variations[i].id);
+            //attribute fields
+            selectVariationField(variations[i].fields);
+          }
+        }
+    
+    });
+
+    function formatOpt(str) {
+      if(str != undefined && str != "" && str != null) {
+        return str.split(" ").join("-").toLowerCase();
+      }
+    }
+
+    function compareArrays(arr1, arr2) {
+        return $(arr1).not(arr2).length == 0 && $(arr2).not(arr1).length == 0;
+    };
+
+    //select variation field value
+    function selectVariationField(vfields) {
+      for(var f=0; f<vfields.length; f++) {
+          $.each(vfields[f], function(k, v) {
+            $("#"+k).find('option[value="'+formatOpt(v)+'"]').attr("selected",true);
+          });
+      }
+    }
+
+    //check quantity before submit the form
+    $('#cart_submit_but').click(function(e) {
+        var quantity = $("#quantity").attr('data-quantity');
+        var input_quantity = $("#quantity").val();
+
+        if(input_quantity > quantity) {
+          alert("Cannot add more than product quantity");
+          return false;
+        }
+
+        if(quantity == 0 || quantity == null) {
+          alert("The product is out of stock");
+          return false;
+        }
+    });
+
+    function priceDisplay(price) {
+      $("#price").html("$ "+price);
+    }
+    function vidDisplay(vid) {
+      $("#vid").val(vid);
+    }
+
+    function quantityDisplay(quantity) {
+
+        $("#quantity").attr('max', quantity);
+        $("#quantity").attr('data-quantity', quantity);
+
+        if(quantity > 10) {
+          $('#in_stock').show();
+          $('#limited_stock').hide();
+          $('#out_of_stock').hide();
+        }
+        if(quantity > 0 && quantity <= 10) {
+          $('#in_stock').hide();
+          $('#limited_stock').show();
+          $('#out_of_stock').hide();
+        }
+        if(quantity == 0 || quantity == null) {
+          $('#in_stock').hide();
+          $('#limited_stock').hide();
+          $('#out_of_stock').show();
+        }
+    }
+  
+});
+</script>
+{% endblock %}

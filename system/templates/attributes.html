@@ -1,0 +1,118 @@
+{% extends 'default.html' %}
+
+{% block header %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css" rel="stylesheet" />
+{% endblock %}
+
+{% block content %}
+
+<!-- start attributes -->
+<div class="col-md-6 col-md-offset-3">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+         <h3 class="panel-title">All Attributes</h3>
+        </div>
+        <div class="panel-body">
+            <form action="generate.php" method="post">
+                <div class="form-group">
+                    <select name="attributes[]" id="attributes" class="form-control" multiple required>
+                        <option value=""></option>
+                        {% if attributes %}
+                            {% for attribute in attributes %}
+                                <option value="{{attribute.id}}">{{attribute.name}}</option>
+                            {% endfor %}
+                        {% endif %}
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-success">Generate Attributes</button>
+            </form>
+        </div>
+    </div>
+</div>
+<!-- end attributes -->
+
+<div class="col-md-12">
+
+    <div class="panel panel-default">
+
+        <div class="panel-heading">
+            <h3 class="panel-title">Generated Attributes</h3>
+        </div>
+        <div class="panel-body">
+            <table class="table table-bordered table-condensed">
+                <thead>
+                    <th class="col-xs-5">Commbination</th>
+                    <th class="col-xs-2">Price</th>
+                    <th class="col-xs-1">Quantity</th>
+                    <th class="col-xs-1">Action</th>
+                    <th class="col-xs-1">Default</th>
+                </thead>
+                <tbody>
+                    {% for variation in variations %}
+                    <tr>
+                        <td>{{ variation.meta|join(' | ') }}</td>
+                        <td><input disabled type="number" name="price" value="{{variation.price}}"></td>
+                        <td><input disabled type="number" name="quantity" value="{{variation.quantity}}"></td>
+                        <td style="text-align:center">
+                            <a href="#" class="btn btn-xs btn-danger v_delete" data-id="{{variation.id}}"><i class="glyphicon glyphicon-trash"></i></a>
+                        </td>
+                        <td style="text-align:center"><input type="radio" name="default" data-id="{{variation.id}}" class="radio-input v_default" {% if variation.default == 1 %} checked {% endif %}></td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td>No Data</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    <tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block footer %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/js/select2.min.js"></script>
+<script type="text/javascript">
+    $(document).ready(function() {
+        $('#attributes').select2();
+    });
+
+    $(function(){
+        $(".v_delete").click(function (e) {
+            e.preventDefault();
+            var vid = $(this).attr("data-id");
+            var retVal = confirm("Aru you sure delete this variation ?");
+            var this_delete = this;
+            if( retVal == true ){
+                $.ajax({
+                    type: "POST",
+                    url: "delete.php",
+                    data: {vid : vid},
+                    success: function(msg){
+                        $(this_delete).closest("tr").remove();
+                    }
+                });
+                }
+            return false;    
+        }); 
+
+        $(".v_default").change(function(e){
+            e.preventDefault();
+            var vid = $(this).attr("data-id");
+            $.ajax({
+                type: "POST",
+                url: "default.php",
+                data: {vid : vid},
+                success: function(msg){
+                    
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}
